@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "$0")" && pwd)"
 source "${SCRIPT_DIR}/common.sh"
 
 require_root
-for cmd in truncate sfdisk losetup mkfs.vfat mkfs.ext4 mount umount rsync dd sync; do
+for cmd in truncate sfdisk losetup mkfs.vfat mkfs.ext4 mount umount mountpoint rsync dd sync install; do
   require_cmd "${cmd}"
 done
 
