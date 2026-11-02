@@ -1,0 +1,3 @@
+#!/bin/sh
+# Keep the desktop minimal. The launcher is intentionally just another Wayland client.
+/usr/local/bin/archcube-launcher &
