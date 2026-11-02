@@ -13,16 +13,16 @@ help:
 	  '  make clean     - remove generated build directory'
 
 rootfs:
-	sudo ./scripts/bootstrap-rootfs.sh
+	sudo bash ./scripts/bootstrap-rootfs.sh
 
 hardware:
-	./scripts/build-hardware.sh
+	bash ./scripts/build-hardware.sh
 
 overlay:
-	sudo ./scripts/apply-rootfs-overlay.sh
+	sudo bash ./scripts/apply-rootfs-overlay.sh
 
 image:
-	sudo ./scripts/build-image.sh
+	sudo bash ./scripts/build-image.sh
 
 all: rootfs hardware overlay image
 
