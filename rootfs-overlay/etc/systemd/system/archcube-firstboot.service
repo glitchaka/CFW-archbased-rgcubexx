@@ -1,0 +1,15 @@
+[Unit]
+Description=Arch Cube first networked provisioning
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=!/var/lib/archcube/firstboot.done
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/archcube-firstboot
+Restart=on-failure
+RestartSec=15s
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
