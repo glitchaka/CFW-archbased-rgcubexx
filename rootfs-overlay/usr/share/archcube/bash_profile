@@ -1,0 +1,4 @@
+# Arch Cube tty1 session startup
+if [[ -z "${WAYLAND_DISPLAY:-}" && "$(tty)" == "/dev/tty1" && -x /usr/local/bin/archcube-session ]]; then
+  exec /usr/local/bin/archcube-session
+fi
