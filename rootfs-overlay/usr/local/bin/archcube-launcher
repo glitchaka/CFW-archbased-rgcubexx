@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -u
+
+while true; do
+  choice="$(printf '%s\n' \
+    'RetroArch' \
+    'Terminal' \
+    'Wi-Fi / Network' \
+    'Bluetooth' \
+    'Restart session' \
+    'Reboot' \
+    'Power off' | fuzzel --dmenu --prompt='Arch Cube > ' || true)"
+
+  case "${choice}" in
+    RetroArch)
+      retroarch &
+      ;;
+    Terminal)
+      foot &
+      ;;
+    'Wi-Fi / Network')
+      foot -e nmtui &
+      ;;
+    Bluetooth)
+      foot -e bluetoothctl &
+      ;;
+    'Restart session')
+      labwc --reconfigure
+      ;;
+    Reboot)
+      systemctl reboot
+      ;;
+    'Power off')
+      systemctl poweroff
+      ;;
+    '')
+      sleep 0.2
+      ;;
+  esac
+
+done
