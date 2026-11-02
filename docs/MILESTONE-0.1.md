@@ -1,67 +1,78 @@
 # Milestone 0.1 — Functional Arch base
 
+## Status
+
+The 0.1 implementation is now present in the repository. Hardware validation is deliberately separate: items marked **implemented** have a build/configuration path, while items marked **device test** cannot be called working until the generated image is booted on a physical RG CubeXX.
+
 ## Definition of done
 
-Milestone 0.1 is complete when the RG CubeXX can boot from a development microSD into an Arch Linux ARM AArch64 userspace and the machine can be used without rebuilding the firmware for every application change.
-
-The key requirement is package-driven extensibility: once networking works, software should be installable through `pacman` or project packages.
+0.1 is released only when a development microSD boots into Arch Linux ARM on the RG CubeXX, first-boot provisioning can install software through pacman, and RetroArch can launch and return to the labwc session.
 
 ## Phase 1 — Boot chain
 
-- [ ] Establish reproducible microSD partition layout
-- [ ] Establish U-Boot source/configuration for H700
-- [ ] Boot Linux kernel on RG CubeXX
-- [ ] Load `sun50i-h700-anbernic-rgcubexx.dtb`
-- [ ] Mount Arch root filesystem
-- [ ] Reach systemd userspace
-- [ ] Obtain serial or persistent boot logs for failures
+- implemented — reproducible MBR microSD layout with 16 MiB bootloader reservation
+- implemented — LPDDR4 H700 U-Boot source/configuration pinned through ROCKNIX enablement
+- implemented — patched H700 kernel build with ROCKNIX initramfs removed
+- implemented — `sun50i-h700-anbernic-rgcubexx.dtb`
+- implemented — extlinux boots `root=LABEL=ARCHCUBE`
+- implemented — serial and tty0 kernel consoles in boot arguments
+- device test — SPL/U-Boot starts on RG CubeXX
+- device test — kernel reaches systemd on physical hardware
 
 ## Phase 2 — Essential hardware
 
-- [ ] Internal 720x720 display
-- [ ] DRM/KMS
-- [ ] Mali/Panfrost acceleration where supported by the selected kernel stack
-- [ ] Built-in controls
-- [ ] Analog sticks
-- [ ] Audio output
-- [ ] Battery reporting
-- [ ] Clean shutdown
-- [ ] Suspend/resume foundation
-- [ ] TF2 / secondary microSD
-- [ ] USB host/OTG
+The selected H700 kernel/device-tree stack contains the support paths; all of these remain physical-device tests:
+
+- device test — internal 720x720 display
+- device test — DRM/KMS
+- device test — Mali G31 / Panfrost acceleration
+- device test — built-in controls
+- device test — analog sticks
+- device test — audio output
+- device test — battery reporting
+- device test — clean shutdown
+- device test — suspend/resume
+- device test — secondary microSD
+- device test — USB host/OTG
 
 ## Phase 3 — Connectivity
 
-- [ ] Wi-Fi
-- [ ] Bluetooth
-- [ ] Network time synchronization
-- [ ] SSH for development
-- [ ] Stable DNS resolution
+- implemented — systemd-networkd wired DHCP bootstrap
+- implemented — NetworkManager installation/takeover
+- implemented — Bluetooth/BlueZ installation
+- implemented — systemd-timesyncd enablement
+- implemented — OpenSSH package installed but not enabled by default
+- device test — RTL8821CS Wi-Fi
+- device test — Bluetooth
 
 ## Phase 4 — Arch package layer
 
-- [ ] Initialize Arch Linux ARM keyring
-- [ ] `pacman -Syu` works
-- [ ] Hardware-critical kernel/boot packages are protected from accidental generic replacement
-- [ ] Create project package namespace
-- [ ] Create first project metapackage
+- implemented — Arch Linux ARM generic AArch64 rootfs
+- implemented — first-boot Arch Linux ARM keyring initialization
+- implemented — package-driven provisioning through pacman
+- implemented — hardware kernel/U-Boot/DTB kept outside generic Arch kernel packages
+- device test — full `pacman -Syu` on the CubeXX
+
+A private Arch Cube package repository is intentionally deferred; 0.1 uses standard Arch Linux ARM packages plus files shipped in the image.
 
 ## Phase 5 — Graphical session
 
-- [ ] Wayland session
-- [ ] labwc
-- [ ] terminal emulator
-- [ ] gamepad navigation mapping foundation
-- [ ] minimal Arch Cube launcher/session
-- [ ] correct 720x720 scaling
+- implemented — Wayland/labwc package path
+- implemented — foot terminal
+- implemented — fuzzel-based minimal Arch Cube launcher
+- implemented — tty1 autologin into the session after provisioning
+- implemented — 720x720-first fullscreen window rule
+- deferred — gamepad-as-desktop-navigation daemon
+- device test — labwc/Panfrost session on the internal display
 
 ## Phase 6 — First applications
 
-- [ ] RetroArch package/install path
-- [ ] initial libretro cores
-- [ ] ROM storage path definition
-- [ ] launch and exit cleanly back to the session
-- [ ] additional standalone emulators only after the base system is stable
+- implemented — RetroArch installation path
+- implemented — optional initial libretro core installation
+- implemented — `/home/alarm/ROMs`
+- implemented — launcher entry for RetroArch
+- device test — RetroArch graphics/audio/input
+- device test — exit cleanly back to labwc
 
 ## Explicitly out of scope for 0.1
 
@@ -72,8 +83,9 @@ The key requirement is package-driven extensibility: once networking works, soft
 - full software store UI
 - OTA system
 - elaborate gaming frontend
-- custom theming beyond what is required for usability
+- final joystick desktop navigation
+- custom theming beyond basic usability
 
-## Technical principle
+## Release gate
 
-Arch Linux ARM is the userspace base. The RG CubeXX-specific bootloader, kernel, device tree and low-level hardware configuration remain under project control. A normal userspace update must not be able to replace those pieces with unsuitable generic packages.
+The repository may call the implementation complete, but the `0.1` release tag must wait for the first physical boot/validation pass. Until then the image version remains `0.1-dev`.
