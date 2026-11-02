@@ -15,6 +15,8 @@ require_cmd make
 require_cmd rsync
 require_cmd aarch64-linux-gnu-gcc
 
+ROCKNIX_BUILD_IMAGE="${ROCKNIX_BUILD_IMAGE:-ghcr.io/rocknix/rocknix-build:latest}"
+
 if [[ ! -d "${ROCKNIX_DIR}/.git" ]]; then
   log "cloning ROCKNIX hardware enablement source"
   git clone --filter=blob:none "${ROCKNIX_REPO}" "${ROCKNIX_DIR}"
@@ -28,18 +30,43 @@ export PROJECT="${ROCKNIX_PROJECT}"
 export DEVICE="${ROCKNIX_DEVICE}"
 export ARCH="${ROCKNIX_ARCH}"
 export AUTOREMOVE=no
+export DISABLE_COLORS=yes
+
+rocknix_build() {
+  local target="$1"
+
+  if [[ "${ARCHCUBE_ROCKNIX_DOCKER:-0}" == "1" ]]; then
+    require_cmd docker
+    log "building ROCKNIX target ${target} in ${ROCKNIX_BUILD_IMAGE}"
+    (
+      cd "${ROCKNIX_DIR}"
+      ./scripts/get_env > .archcube-build.env
+      docker run --init --rm \
+        --user "$(id -u):$(id -g)" \
+        --env-file .archcube-build.env \
+        -v "${ROCKNIX_DIR}:${ROCKNIX_DIR}" \
+        -w "${ROCKNIX_DIR}" \
+        "${ROCKNIX_BUILD_IMAGE}" \
+        bash -lc "./scripts/build ${target}"
+    )
+  else
+    log "building ROCKNIX target ${target} on host"
+    (
+      cd "${ROCKNIX_DIR}"
+      ./scripts/build "${target}"
+    )
+  fi
+}
 
 log "preparing/building the patched H700 Linux tree through ROCKNIX"
-(
-  cd "${ROCKNIX_DIR}"
-  ./scripts/build linux
-)
+rocknix_build linux
 
 KERNEL_BUILD="$(find "${ROCKNIX_DIR}" -type f -path '*/linux-*/arch/arm64/boot/Image' -printf '%h\n' 2>/dev/null | sed 's#/arch/arm64/boot$##' | head -n1)"
 [[ -n "${KERNEL_BUILD}" && -d "${KERNEL_BUILD}" ]] || die "could not locate the prepared ROCKNIX Linux build tree"
 
 log "rebuilding patched kernel without the ROCKNIX embedded initramfs"
 "${KERNEL_BUILD}/scripts/config" --set-str CONFIG_INITRAMFS_SOURCE ""
+make -C "${KERNEL_BUILD}" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- clean
 make -C "${KERNEL_BUILD}" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
 make -C "${KERNEL_BUILD}" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j"$(nproc)" Image dtbs modules
 
@@ -54,10 +81,7 @@ DTB_SOURCE="${KERNEL_BUILD}/arch/arm64/boot/dts/allwinner/${DTB_NAME}"
 install -Dm0644 "${DTB_SOURCE}" "${HARDWARE_DIR}/${DTB_NAME}"
 
 log "building ROCKNIX H700 U-Boot dependencies/artifacts"
-(
-  cd "${ROCKNIX_DIR}"
-  ./scripts/build u-boot
-)
+rocknix_build u-boot
 
 UBOOT_SOURCE="$(find "${ROCKNIX_DIR}" -type f \( \
   -name "H700_${UBOOT_SUBDEVICE}_u-boot-sunxi-with-spl.bin" -o \
