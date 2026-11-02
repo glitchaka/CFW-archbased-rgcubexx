@@ -1,0 +1,7 @@
+build/
+.cache/
+work/
+*.img
+*.img.gz
+*.tar.gz
+*.pkg.tar.*
