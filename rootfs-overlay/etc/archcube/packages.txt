@@ -1,5 +1,4 @@
-# Packages installed on the first networked boot.
-# Keep this list conservative for the 1 GB RG CubeXX.
+# Required packages installed on the first networked boot.
 networkmanager
 openssh
 bluez
@@ -22,10 +21,3 @@ foot
 fuzzel
 retroarch
 libretro-core-info
-libretro-gambatte
-libretro-mgba
-libretro-nestopia
-libretro-snes9x
-libretro-genesis-plus-gx
-libretro-beetle-pce-fast
-libretro-beetle-psx
