@@ -1,6 +1,7 @@
 # Packages installed on the first networked boot.
 # Keep this list conservative for the 1 GB RG CubeXX.
 networkmanager
+openssh
 bluez
 bluez-utils
 alsa-utils
@@ -12,6 +13,10 @@ mesa
 libdrm
 libinput
 seatd
+polkit
+sudo
+git
+nano
 labwc
 foot
 fuzzel
