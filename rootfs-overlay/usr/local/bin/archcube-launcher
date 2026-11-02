@@ -13,16 +13,16 @@ while true; do
 
   case "${choice}" in
     RetroArch)
-      retroarch &
+      retroarch
       ;;
     Terminal)
-      foot &
+      foot
       ;;
     'Wi-Fi / Network')
-      foot -e nmtui &
+      foot -e nmtui
       ;;
     Bluetooth)
-      foot -e bluetoothctl &
+      foot -e bluetoothctl
       ;;
     'Restart session')
       labwc --reconfigure
