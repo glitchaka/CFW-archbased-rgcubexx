@@ -1,0 +1,2 @@
+LABEL=ARCHCUBE_ROOT  /      ext4  defaults,noatime  0 1
+LABEL=ARCHCUBE_BOOT  /boot  vfat  defaults,noatime,umask=0077  0 2
