@@ -1,32 +1,42 @@
 # RG CubeXX boot layer
 
-This directory owns the hardware-critical boot layer. It is deliberately separate from the Arch Linux ARM userspace.
+The hardware-critical boot layer is kept outside Arch package management. A normal `pacman -Syu` must never replace the H700 bootloader, kernel or RG CubeXX device tree.
 
-## Target chain
+## Boot chain
 
 ```text
-microSD
-  -> H700 boot ROM
-  -> U-Boot
+H700 Boot ROM
+  -> SPL / U-Boot at 8 KiB on the microSD
+  -> extlinux.conf
   -> Linux Image
   -> sun50i-h700-anbernic-rgcubexx.dtb
-  -> Arch Linux ARM rootfs
+  -> root=LABEL=ARCHCUBE
+  -> Arch Linux ARM / systemd
 ```
 
-## Rules
+## 0.1 source policy
 
-1. Do not replace the project kernel, U-Boot or RG CubeXX DTB with generic Arch packages during normal system upgrades.
-2. Keep the device-specific layer reproducible and versioned.
-3. Prefer an upstream/mainline-capable H700 stack where it provides the required RG CubeXX hardware support.
-4. Track borrowed patches/configuration with source and license information.
-5. Keep stock/development SD cards separate while the boot path is experimental.
+For the first usable release, Arch Cube uses the current mainline-oriented H700 enablement maintained by ROCKNIX as a build-time hardware reference. The source is pinned in `config/build.env` rather than following their moving branch.
 
-## Known device-tree name
+The hardware build performs two distinct operations:
 
-The RG CubeXX device tree used by current H700 Linux distributions is:
+1. ROCKNIX prepares its H700-patched kernel/U-Boot trees and dependencies.
+2. Arch Cube rebuilds that patched kernel with `CONFIG_INITRAMFS_SOURCE=""`, so the resulting kernel boots the Arch Linux ARM filesystem directly instead of the ROCKNIX userspace.
 
-```text
-sun50i-h700-anbernic-rgcubexx.dtb
-```
+Current target details:
 
-The exact kernel/U-Boot source and configuration for this project are not pinned yet. They must be selected and documented before the first image build.
+- H700 Cortex-A53 / AArch64
+- LPDDR4 / DDR4 U-Boot target
+- U-Boot binary: `u-boot-sunxi-with-spl.bin`
+- raw U-Boot offset: 8 KiB
+- DTB: `sun50i-h700-anbernic-rgcubexx.dtb`
+- GPU path: DRM/KMS + Panfrost
+- boot configuration: U-Boot distro boot / extlinux
+
+## Upgrade rule
+
+`linux`, U-Boot and the DTB are Arch Cube hardware artifacts. They are deliberately not installed from generic Arch kernel packages. Userspace remains independently upgradeable through pacman.
+
+## Licensing
+
+ROCKNIX, Linux, U-Boot and related patches retain their upstream licenses. This repository does not relicense third-party sources; `scripts/build-hardware.sh` fetches the pinned upstream trees at build time.
