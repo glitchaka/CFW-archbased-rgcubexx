@@ -1,0 +1,100 @@
+name: Build Arch Cube image
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-image.yml'
+      - 'config/**'
+      - 'scripts/**'
+      - 'rootfs-overlay/**'
+      - 'Makefile'
+
+permissions:
+  contents: read
+
+jobs:
+  build-image:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+
+    steps:
+      - name: Maximize build space
+        uses: justinthelaw/maximize-github-runner-space@v0.9.0
+        with:
+          skip-components: docker-engine
+
+      - name: Checkout Arch Cube
+        uses: actions/checkout@v4
+
+      - name: Install host build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            bc bison build-essential cpio curl device-tree-compiler dosfstools \
+            e2fsprogs fdisk flex gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
+            git libarchive-tools libelf-dev libssl-dev make rsync swig \
+            util-linux xz-utils zstd
+
+      - name: Pull ROCKNIX build environment
+        run: docker pull ghcr.io/rocknix/rocknix-build:latest
+
+      - name: Prepare Arch Linux ARM rootfs
+        run: make rootfs
+
+      - name: Build H700 kernel DTB and U-Boot
+        env:
+          ARCHCUBE_ROCKNIX_DOCKER: '1'
+          ROCKNIX_BUILD_IMAGE: ghcr.io/rocknix/rocknix-build:latest
+        run: make hardware
+
+      - name: Apply Arch Cube rootfs overlay
+        run: make overlay
+
+      - name: Assemble flashable microSD image
+        run: make image
+
+      - name: Inspect generated artifacts
+        run: |
+          set -euo pipefail
+          source config/build.env
+          test -s "build/hardware/Image"
+          test -s "build/hardware/${DTB_NAME}"
+          test -s "build/hardware/u-boot-sunxi-with-spl.bin"
+          test -s "build/images/archcube-rgcubexx-${ARCHCUBE_VERSION}.img"
+          ls -lh build/hardware/Image \
+            "build/hardware/${DTB_NAME}" \
+            build/hardware/u-boot-sunxi-with-spl.bin \
+            "build/images/archcube-rgcubexx-${ARCHCUBE_VERSION}.img"
+
+      - name: Compress image and generate checksum
+        run: |
+          set -euo pipefail
+          source config/build.env
+          image="build/images/archcube-rgcubexx-${ARCHCUBE_VERSION}.img"
+          xz -T0 -6 --keep "${image}"
+          sha256sum "${image}.xz" > "${image}.xz.sha256"
+          ls -lh "${image}.xz" "${image}.xz.sha256"
+
+      - name: Upload flashable image
+        uses: actions/upload-artifact@v4
+        with:
+          name: archcube-rgcubexx-0.1-dev
+          path: |
+            build/images/archcube-rgcubexx-0.1-dev.img.xz
+            build/images/archcube-rgcubexx-0.1-dev.img.xz.sha256
+          compression-level: 0
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Upload build diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: archcube-build-diagnostics
+          path: |
+            build/rocknix/build.ROCKNIX-H700.aarch64/.threads/logs/
+            build/hardware/
+          if-no-files-found: ignore
+          retention-days: 7
