@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+STATE_DIR=/var/lib/archcube
+DONE_FILE=${STATE_DIR}/firstboot.done
+PACKAGE_LIST=/etc/archcube/packages.txt
+
+mkdir -p "${STATE_DIR}"
+[[ -e "${DONE_FILE}" ]] && exit 0
+
+if ! ping -c1 -W2 1.1.1.1 >/dev/null 2>&1; then
+  echo "Arch Cube first boot: network is not ready; connect Ethernet or configure networking and restart archcube-firstboot.service." >&2
+  exit 1
+fi
+
+pacman-key --init
+pacman-key --populate archlinuxarm
+pacman -Syy --noconfirm
+mapfile -t packages < <(grep -Ev '^[[:space:]]*(#|$)' "${PACKAGE_LIST}")
+pacman -S --needed --noconfirm "${packages[@]}"
+
+systemctl enable NetworkManager.service
+systemctl enable bluetooth.service
+systemctl enable systemd-timesyncd.service
+
+# NetworkManager takes ownership after the bootstrap wired connection.
+systemctl disable systemd-networkd.service >/dev/null 2>&1 || true
+systemctl stop systemd-networkd.service >/dev/null 2>&1 || true
+systemctl restart NetworkManager.service || true
+
+install -d -m 0755 /home/alarm/.config/labwc /home/alarm/.config/foot /home/alarm/.config/fuzzel
+cp -a /usr/share/archcube/labwc/. /home/alarm/.config/labwc/
+cp -a /usr/share/archcube/foot/. /home/alarm/.config/foot/
+cp -a /usr/share/archcube/fuzzel/. /home/alarm/.config/fuzzel/
+chown -R alarm:alarm /home/alarm/.config
+
+# Start the graphical session automatically on tty1 after the next login/boot.
+install -Dm0644 /usr/share/archcube/bash_profile /home/alarm/.bash_profile
+chown alarm:alarm /home/alarm/.bash_profile
+
+touch "${DONE_FILE}"
+echo "Arch Cube first boot provisioning complete."
