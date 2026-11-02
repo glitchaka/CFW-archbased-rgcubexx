@@ -17,6 +17,7 @@ chmod 0755 \
   "${ROOTFS_DIR}/usr/local/bin/archcube-launcher" \
   "${ROOTFS_DIR}/usr/local/bin/archcube-session" \
   "${ROOTFS_DIR}/usr/share/archcube/labwc/autostart"
+chmod 0440 "${ROOTFS_DIR}/etc/sudoers.d/10-archcube"
 
 install -d "${ROOTFS_DIR}/etc/systemd/system/multi-user.target.wants"
 ln -sfn /usr/lib/systemd/system/systemd-networkd.service \
