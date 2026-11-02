@@ -1,0 +1,26 @@
+# Packages installed on the first networked boot.
+# Keep this list conservative for the 1 GB RG CubeXX.
+networkmanager
+bluez
+bluez-utils
+alsa-utils
+pipewire
+pipewire-audio
+pipewire-pulse
+wireplumber
+mesa
+libdrm
+libinput
+seatd
+labwc
+foot
+fuzzel
+retroarch
+libretro-core-info
+libretro-gambatte
+libretro-mgba
+libretro-nestopia
+libretro-snes9x
+libretro-genesis-plus-gx
+libretro-beetle-pce-fast
+libretro-beetle-psx
