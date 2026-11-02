@@ -1,4 +1,4 @@
-SHELL := /usr/bin/env bash
+SHELL := /bin/bash
 
 .PHONY: help rootfs hardware overlay image all clean
 
