@@ -1,0 +1,44 @@
+name: Validate source tree
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  static-validation:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate shell syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            bash -n "$file"
+          done < <(find scripts -type f -name '*.sh' -print0)
+          bash -n rootfs-overlay/usr/local/bin/archcube-launcher
+          bash -n rootfs-overlay/usr/local/bin/archcube-session
+          bash -n rootfs-overlay/usr/local/sbin/archcube-firstboot
+          bash -n rootfs-overlay/usr/share/archcube/labwc/autostart
+
+      - name: Validate labwc XML
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          ET.parse('rootfs-overlay/usr/share/archcube/labwc/rc.xml')
+          print('labwc rc.xml: OK')
+          PY
+
+      - name: Validate Makefile parsing
+        run: make -n help >/dev/null
+
+      - name: Validate required image inputs are wired
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'sun50i-h700-anbernic-rgcubexx.dtb' config/build.env
+          grep -q 'ROCKNIX_COMMIT=' config/build.env
+          grep -q 'root=LABEL=' scripts/build-image.sh
+          grep -q 'bs=1K seek=8' scripts/build-image.sh
